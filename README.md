@@ -23,13 +23,13 @@ Simple Usage:
 
     c = Clipper::Clipper.new
 
-    c.add_polygon(a, Clipper::PolyType::SUBJECT)
-    c.add_polygon(b, Clipper::PolyType::CLIP)
+    c.add_subject_polygon(a)
+    c.add_clip_polygon(b)
     c.union
 
     => [[[100.0, 0.0], [0.0, 0.0], [0.0, 47.85714326530613], [-4.999999, 50.0],
          [0.0, 50.0], [0.0, 100.0], [100.0, 100.0], [100.0, 50.0],
          [200.0, 50.0], [100.0, 5.0]]]
 
-  Check out the main Clipper examples for other clip types, etc.
+  Check out the main Clipper examples for other clip types, winding rules, etc.
 

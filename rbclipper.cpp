@@ -6,15 +6,38 @@
  *
  */
 
-#include <ruby.h>
 #include <clipper.hpp>
+#include <ruby.h>
 
 using namespace std;
 using namespace clipper;
 
-extern "C" {
+static ID id_even_odd;
+static ID id_non_zero;
 
-#define XCLIPPER(x)      ((Clipper*) DATA_PTR(x))
+static inline Clipper*
+XCLIPPER(VALUE x)
+{
+  Clipper* clipper;
+  Data_Get_Struct(x, Clipper, clipper);
+  return clipper;
+}
+
+static inline TPolyFillType
+sym_to_filltype(VALUE sym)
+{
+  ID inp = rb_to_id(sym);
+
+  if (inp == id_even_odd) {
+    return pftEvenOdd;
+  } else if (inp == id_non_zero) {
+    return pftNonZero;
+  }
+
+  rb_raise(rb_eArgError, "%s", "Expected :even_odd or :non_zero");
+}
+
+extern "C" {
 
 static void
 ary_to_polygon(VALUE ary, TPolygon* poly)
@@ -67,22 +90,50 @@ rbclipper_new(VALUE klass)
 }
 
 static VALUE
-rbclipper_add_polygon(VALUE self, VALUE polygon, VALUE polytype)
+rbclipper_add_polygon_internal(VALUE self, VALUE polygon,
+                               TPolyType polytype)
 {
   TPolygon tmp;
   ary_to_polygon(polygon, &tmp);
-  XCLIPPER(self)->AddPolygon(tmp, (TPolyType) NUM2INT(polytype));
+  XCLIPPER(self)->AddPolygon(tmp, polytype);
   return Qnil;
 }
 
 static VALUE
-rbclipper_add_poly_polygon(VALUE self, VALUE polypoly, VALUE polytype)
+rbclipper_add_subject_polygon(VALUE self, VALUE polygon)
+{
+  return rbclipper_add_polygon_internal(self, polygon, ptSubject);
+}
+
+static VALUE
+rbclipper_add_clip_polygon(VALUE self, VALUE polygon)
+{
+  return rbclipper_add_polygon_internal(self, polygon, ptClip);
+}
+
+
+static VALUE
+rbclipper_add_poly_polygon_internal(VALUE self, VALUE polypoly,
+                                    TPolyType polytype)
 {
   TPolyPolygon tmp;
   ary_to_polypolygon(polypoly, &tmp);
-  XCLIPPER(self)->AddPolyPolygon(tmp, (TPolyType) NUM2INT(polytype));
+  XCLIPPER(self)->AddPolyPolygon(tmp, polytype);
   return Qnil;
 }
+
+static VALUE
+rbclipper_add_subject_poly_polygon(VALUE self, VALUE polygon)
+{
+  return rbclipper_add_poly_polygon_internal(self, polygon, ptSubject);
+}
+
+static VALUE
+rbclipper_add_clip_poly_polygon(VALUE self, VALUE polygon)
+{
+  return rbclipper_add_poly_polygon_internal(self, polygon, ptClip);
+}
+
 
 static VALUE
 rbclipper_clear(VALUE self)
@@ -109,15 +160,16 @@ rbclipper_execute_internal(VALUE self, TClipType cliptype,
                            VALUE subjfill, VALUE clipfill)
 {
   if (NIL_P(subjfill))
-    subjfill = INT2FIX(pftEvenOdd);
+    subjfill = ID2SYM(id_even_odd);
+
   if (NIL_P(clipfill))
-    clipfill = INT2FIX(pftEvenOdd);
+    clipfill = ID2SYM(id_even_odd);
 
   TPolyPolygon solution;
   XCLIPPER(self)->Execute((TClipType) cliptype,
                           solution,
-                          (TPolyFillType) NUM2INT(subjfill),
-                          (TPolyFillType) NUM2INT(clipfill));
+                          sym_to_filltype(subjfill),
+                          sym_to_filltype(clipfill));
   VALUE r = rb_ary_new();
   for(TPolyPolygon::iterator i = solution.begin();
                              i != solution.end();
@@ -149,10 +201,10 @@ rbclipper_union(int argc, VALUE* argv, VALUE self)
 
   /* For union, we really wanna default to non-zero */
   if(NIL_P(subjfill) && NIL_P(clipfill)) {
-    subjfill = INT2FIX(pftNonZero);
-    clipfill = INT2FIX(pftNonZero);
+    subjfill = ID2SYM(id_non_zero);
+    clipfill = ID2SYM(id_non_zero);
   }
-  
+
   return rbclipper_execute_internal(self, ctUnion, subjfill, clipfill);
 }
 
@@ -176,33 +228,43 @@ rbclipper_xor(int argc, VALUE* argv, VALUE self)
 
 
 typedef VALUE (*ruby_method)(...);
-#define M(x) ((ruby_method)(x))
 
 void Init_clipper() {
+  id_even_odd = rb_intern("even_odd");
+  id_non_zero = rb_intern("non_zero");
+
   VALUE mod   = rb_define_module("Clipper");
 
-  VALUE polytype = rb_define_module_under(mod, "PolyType");
-  rb_define_const(polytype, "SUBJECT", INT2FIX(ptSubject));
-  rb_define_const(polytype, "CLIP",   INT2FIX(ptClip));
-
-  VALUE polyfilltype = rb_define_module_under(mod, "PolyFillType");
-  rb_define_const(polyfilltype, "EVEN_ODD", INT2FIX(pftEvenOdd));
-  rb_define_const(polyfilltype, "NON_ZERO", INT2FIX(pftNonZero));
-
   VALUE k = rb_define_class_under(mod, "Clipper", rb_cObject);
-  rb_define_singleton_method(k, "new", M(rbclipper_new), 0);
-  rb_define_method(k, "add_polygon", M(rbclipper_add_polygon), 2);
-  rb_define_method(k, "add_poly_polygon", M(rbclipper_add_poly_polygon), 2);
-  rb_define_method(k, "clear!", M(rbclipper_clear), 0);
-  rb_define_method(k, "force_orientation", M(rbclipper_force_orientation), 0);
+  rb_define_singleton_method(k, "new",
+                             (ruby_method) rbclipper_new, 0);
+
+  rb_define_method(k, "add_subject_polygon",
+                   (ruby_method) rbclipper_add_subject_polygon, 1);
+  rb_define_method(k, "add_clip_polygon",
+                   (ruby_method) rbclipper_add_clip_polygon, 1);
+
+  rb_define_method(k, "add_subject_poly_polygon",
+                   (ruby_method) rbclipper_add_subject_poly_polygon, 1);
+  rb_define_method(k, "add_clip_poly_polygon",
+                   (ruby_method) rbclipper_add_clip_poly_polygon, 1);
+
+
+  rb_define_method(k, "clear!",
+                   (ruby_method) rbclipper_clear, 0);
+  rb_define_method(k, "force_orientation",
+                   (ruby_method) rbclipper_force_orientation, 0);
   rb_define_method(k, "force_orientation=",
-                      M(rbclipper_force_orientation_eq), 1);
+                   (ruby_method) rbclipper_force_orientation_eq, 1);
 
-  rb_define_method(k, "intersection", M(rbclipper_intersection), -1);
-  rb_define_method(k, "union", M(rbclipper_union), -1);
-  rb_define_method(k, "difference", M(rbclipper_difference), -1);
-  rb_define_method(k, "xor", M(rbclipper_xor), -1);
+  rb_define_method(k, "intersection",
+                   (ruby_method) rbclipper_intersection, -1);
+  rb_define_method(k, "union",
+                   (ruby_method) rbclipper_union, -1);
+  rb_define_method(k, "difference",
+                   (ruby_method) rbclipper_difference, -1);
+  rb_define_method(k, "xor",
+                   (ruby_method) rbclipper_xor, -1);
 }
-#undef M
 
-} /* extern 'C' */
+} /* extern "C" */
