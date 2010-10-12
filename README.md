@@ -25,7 +25,7 @@ Simple Usage:
 
     c.add_subject_polygon(a)
     c.add_clip_polygon(b)
-    c.union
+    c.union :non_zero, :non_zero
 
     => [[[100.0, 0.0], [0.0, 0.0], [0.0, 47.85714326530613], [-4.999999, 50.0],
          [0.0, 50.0], [0.0, 100.0], [100.0, 100.0], [100.0, 50.0],
