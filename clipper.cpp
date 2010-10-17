@@ -207,25 +207,14 @@ bool IntersectPoint(TEdge &edge1, TEdge &edge2, TDoublePoint &ip)
 }
 //------------------------------------------------------------------------------
 
-double mhypot(double a, double b)
-{
-  double absa = std::abs(a),
-         absb = std::abs(b);
-
-  double mx = std::max(absa, absb);
-  double mn = std::min(absa, absb);
-  double ra = mx / mn;
-  return mx * sqrt(1 + ra * ra);
-}
-
 TDoublePoint GetUnitNormal( const TDoublePoint &pt1, const TDoublePoint &pt2)
 {
   double dx = ( pt2.X - pt1.X );
   double dy = ( pt2.Y - pt1.Y );
   if(  ( dx == 0 ) && ( dy == 0 ) ) return DoublePoint( 0, 0 );
 
-  double f = 1 *1.0/ mhypot( dx , dy );
-
+  double f = 1 *1.0/ hypot( dx , dy );
+  //double f = 1 *1.0/ std::hypot( dx , dy );
   dx = dx * f;
   dy = dy * f;
   return DoublePoint(dy, -dx);
@@ -550,6 +539,7 @@ void ClipperBase::AddPolygon( const TPolygon &pg, TPolyType polyType)
     e = e->next;
   } while( e != edges );
 
+  TDoublePoint nextPt;
   if ( e->next->nextAtTop )
     ReInitEdge(e, e->next->x, e->next->y, polyType); else
     ReInitEdge(e, e->next->xtop, e->next->ytop, polyType);
@@ -647,14 +637,14 @@ Clipper::Clipper() : ClipperBase() //constructor
   m_ExecuteLocked = false;
   m_ForceOrientation = true;
   m_PolyPts.reserve(32);
-}
+};
 //------------------------------------------------------------------------------
 
 Clipper::~Clipper() //destructor
 {
   DisposeScanbeamList();
   DisposeAllPolyPts();
-}
+};
 //------------------------------------------------------------------------------
 
 void Clipper::DisposeScanbeamList()

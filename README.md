@@ -4,7 +4,7 @@ These are Ruby 1.9.2+ bindings to Clipper, Angus Johnson's Polygon clipping
 library. Because Clipper is not readily packaged, and is so beautifully
 self-contained, I've included the two required files in the package.
 
-This release contains version 2.521 of Clipper.
+This release contains version 2.522 of Clipper.
 
 [Clipper Homepage](http://angusj.com/delphi/clipper.php)
 
