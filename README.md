@@ -86,6 +86,14 @@ Clipper::Clipper Methods
 
   Multiple subject and clip polygons can be added to the engine for operations.
 
+* `Clipper#add_subject_poly_polygon(poly_polygon)`
+
+  `Clipper#add_clip_poly_polygon(poly_polygon)`
+
+  Add a "Poly-Polygon" to the engine.  Which is basically a set of polygons.  
+  Boolean operations consider every poly-polygon added in this manner to be the
+  same object.
+
 * `Clipper#force_orientation`
 
   `Clipper#force_orientation=`
