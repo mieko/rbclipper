@@ -1,8 +1,8 @@
 /*******************************************************************************
 *                                                                              *
 * Author    :  Angus Johnson                                                   *
-* Version   :  2.53                                                            *
-* Date      :  4 October 2010                                                  *
+* Version   :  2.85                                                            *
+* Date      :  26 November 2010                                                *
 * Copyright :  Angus Johnson                                                   *
 *                                                                              *
 * License:                                                                     *
@@ -18,6 +18,7 @@
 * Computer graphics and geometric modeling: implementation and algorithms      *
 * By Max K. Agoston                                                            *
 * Springer; 1 edition (January 4, 2005)                                        *
+* Pages 98 - 106.                                                              *
 * http://books.google.com/books?q=vatti+clipping+agoston                       *
 *                                                                              *
 *******************************************************************************/
@@ -44,16 +45,21 @@ typedef enum { ctIntersection, ctUnion, ctDifference, ctXor } TClipType;
 typedef enum { ptSubject, ptClip } TPolyType;
 typedef enum { pftEvenOdd, pftNonZero} TPolyFillType;
 
-//used internally ...
-typedef enum { esLeft, esRight } TEdgeSide;
-typedef unsigned TIntersectProtects;
-typedef enum { sFalse, sTrue, sUndefined} TriState;
-
 struct TDoublePoint { double X; double Y; };
+struct TDoubleRect { double left; double top; double right; double bottom; };
 typedef std::vector< TDoublePoint > TPolygon;
 typedef std::vector< TPolygon > TPolyPolygon;
 
 TDoublePoint DoublePoint(const double &X, const double &Y);
+TPolyPolygon OffsetPolygons(const TPolyPolygon &pts, const double &delta);
+double PolygonArea(const TPolygon &poly);
+TDoubleRect GetBounds(const TPolygon &poly);
+bool IsClockwise(const TPolygon &poly);
+
+//used internally ...
+typedef enum { esLeft, esRight } TEdgeSide;
+typedef unsigned TIntersectProtects;
+typedef enum { sFalse, sTrue, sUndefined} TTriState;
 
 struct TEdge {
   double x;
@@ -104,10 +110,18 @@ struct TPolyPt {
   TDoublePoint pt;
   TPolyPt *next;
   TPolyPt *prev;
-  TriState isHole;
+  TTriState isHole;
+};
+
+struct TJoinRec {
+    TPolyPt* ppt1;
+    int idx1;
+    TPolyPt* ppt2;
+    int idx2;
 };
 
 typedef std::vector < TPolyPt * > PolyPtList;
+typedef std::vector < TJoinRec > JoinList;
 
 //ClipperBase is the ancestor to the Clipper class. It should not be
 //instantiated directly. This class simply abstracts the conversion of sets of
@@ -120,6 +134,7 @@ public:
   void AddPolygon(const TPolygon &pg, TPolyType polyType);
   void AddPolyPolygon( const TPolyPolygon &ppg, TPolyType polyType);
   virtual void Clear();
+  TDoubleRect GetBounds();
 protected:
   void DisposeLocalMinimaList();
   void InsertLocalMinima(TLocalMinima *newLm);
@@ -138,20 +153,21 @@ public:
   Clipper();
   ~Clipper();
   bool Execute(TClipType clipType,
-    TPolyPolygon &solution,
-    TPolyFillType subjFillType = pftEvenOdd,
-    TPolyFillType clipFillType = pftEvenOdd);
-  //The ForceOrientation property is only useful when operating on simple
-  //polygons. It ensures that the simple polygons that result from a
+  TPolyPolygon &solution,
+  TPolyFillType subjFillType = pftEvenOdd,
+  TPolyFillType clipFillType = pftEvenOdd);
+  //The ForceOrientation property ensures that polygons that result from a
   //TClipper.Execute() calls will have clockwise 'outer' and counter-clockwise
   //'inner' (or 'hole') polygons. If ForceOrientation == false, then the
   //polygons returned in the solution will have undefined orientation.<br>
-  //The only disadvantage in setting ForceOrientation = true is it will result
-  //in a very minor penalty (~10%) in execution speed. (Default == true)
+  //Setting ForceOrientation = true results in a minor penalty (~10%) in
+  //execution speed. (Default == true) ***DEPRICATED***
   bool ForceOrientation();
   void ForceOrientation(bool value);
 private:
   PolyPtList        m_PolyPts;
+  JoinList          m_Joins;
+  JoinList          m_CurrentHorizontals;
   TClipType         m_ClipType;
   TScanbeam        *m_Scanbeam;
   TEdge            *m_ActiveEdges;
@@ -162,6 +178,7 @@ private:
   TPolyFillType     m_ClipFillType;
   TPolyFillType     m_SubjFillType;
   double            m_IntersectTolerance;
+  void UpdateHoleStates();
   void DisposeScanbeamList();
   void SetWindingDelta(TEdge *edge);
   void SetWindingCount(TEdge *edge);
@@ -194,7 +211,8 @@ private:
   void DoBothEdges(TEdge *edge1, TEdge *edge2, const TDoublePoint &pt);
   void IntersectEdges(TEdge *e1, TEdge *e2,
      const TDoublePoint &pt, TIntersectProtects protects);
-  void AddPolyPt(TEdge *e, const TDoublePoint &pt);
+  TPolyPt* AddPolyPt(TEdge *e, const TDoublePoint &pt);
+  TPolyPt* InsertPolyPtBetween(const TDoublePoint &pt, TPolyPt* pp1, TPolyPt* pp2);
   void DisposeAllPolyPts();
   void ProcessIntersections( const double &topY);
   void AddIntersectNode(TEdge *e1, TEdge *e2, const TDoublePoint &pt);
@@ -204,6 +222,8 @@ private:
   void ProcessEdgesAtTopOfScanbeam( const double &topY);
   void BuildResult(TPolyPolygon &polypoly);
   void DisposeIntersectNodes();
+  void FixupJoins(int oldIdx, int newIdx);
+  void JoinCommonEdges();
 };
 
 class clipperException : public std::exception
