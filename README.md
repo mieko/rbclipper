@@ -109,7 +109,7 @@ Clipper::Clipper Methods
 
 * `Clipper#intersection(subject_fill=:even_odd, clip_fill=:even_odd)`
 
-  `Clipper#union(subject_fill=:non_zero, clip_fill=:non_zero)`
+  `Clipper#union(subject_fill=:even_odd, clip_fill=:even_odd)`
 
   `Clipper#difference(subject_fill=:even_odd, clip_fill=:even_odd)`
 
