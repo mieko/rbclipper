@@ -199,12 +199,6 @@ rbclipper_union(int argc, VALUE* argv, VALUE self)
 
   rb_scan_args(argc, argv, "02", &subjfill, &clipfill);
 
-  /* For union, we really wanna default to non-zero */
-  if(NIL_P(subjfill) && NIL_P(clipfill)) {
-    subjfill = ID2SYM(id_non_zero);
-    clipfill = ID2SYM(id_non_zero);
-  }
-
   return rbclipper_execute_internal(self, ctUnion, subjfill, clipfill);
 }
 

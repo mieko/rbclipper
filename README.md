@@ -4,7 +4,7 @@ These are Ruby 1.9.2+ bindings to Clipper, Angus Johnson's Polygon clipping
 library. Because Clipper is not readily packaged, and is so beautifully
 self-contained, I've included the two required files in the package.
 
-This release contains version 2.85 of Clipper.
+This release contains version 2.9 of Clipper.
 
 * [Clipper Homepage](http://angusj.com/delphi/clipper.php)
 * [rbclipper](http://github.com/mieko/rbclipper)
@@ -50,9 +50,14 @@ coordinates, for example, to specify a triangle:
 
     triangle = [[0,0], [0,100], [50, -100]]
 
-Clipper supports both holes and complex polygons.  Coordinates for simple 
-polygons are counter-clockwise for shells, and and counter-clockwise for holes.
+Clipper supports both holes and complex polygons.  Coordinates for output 
+polygons are clockwise for shells, and and counter-clockwise for holes.
 See force_orientation.
+
+Note that since 2.8, Clipper defines orientation with respect to a 
+_downward-increasing Y axis_, similar to how many 2D GUI/drawing APIs position 
+coordinate (0,0) at the top-left corner.  The bindings have followed Clipper 
+proper in this regard.
 
 Multiple polygons are represented as simply an array of polygons.
 
