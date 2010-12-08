@@ -9,6 +9,10 @@
 #include <clipper.hpp>
 #include <ruby.h>
 
+#ifndef DBL2NUM
+# define DBL2NUM rb_float_new
+#endif
+
 using namespace std;
 using namespace clipper;
 
