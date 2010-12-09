@@ -11,6 +11,8 @@ This release contains version 2.9 of Clipper.
 
 To install:
 
+You'll need to have Bundler installed.
+
     ruby ./extconf.rb
     make
     make install
