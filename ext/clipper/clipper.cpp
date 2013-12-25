@@ -99,7 +99,7 @@ TDoublePoint GetUnitNormal( const TDoublePoint &pt1, const TDoublePoint &pt2)
 TPolygon BuildArc(const TDoublePoint &pt,
   const double a1, const double a2, const double r)
 {
-  int steps = max(6, int(sqrt(abs(r)) * abs(a2 - a1)));
+  int steps = max(6, int(sqrt(fabs(r)) * fabs(a2 - a1)));
   TPolygon result(steps);
   int n = steps - 1;
   double da = (a2 - a1) / n;
@@ -934,7 +934,7 @@ void Clipper::SetWindingCount(TEdge *edge)
     //nonZero filling ...
     if ( e->windCnt * e->windDelta < 0 )
     {
-      if (abs(e->windCnt) > 1)
+      if (fabs(e->windCnt) > 1)
       {
         if (e->windDelta * edge->windDelta < 0) edge->windCnt = e->windCnt;
         else edge->windCnt = e->windCnt + edge->windDelta;
@@ -942,7 +942,7 @@ void Clipper::SetWindingCount(TEdge *edge)
         edge->windCnt = e->windCnt + e->windDelta + edge->windDelta;
     } else
     {
-      if ( abs(e->windCnt) > 1 && e->windDelta * edge->windDelta < 0)
+      if ( fabs(e->windCnt) > 1 && e->windDelta * edge->windDelta < 0)
         edge->windCnt = e->windCnt;
       else if ( e->windCnt + edge->windDelta == 0 )
         edge->windCnt = e->windCnt;
@@ -1812,8 +1812,8 @@ void Clipper::IntersectEdges(TEdge *e1, TEdge *e2,
 
   if ( e1Contributing && e2contributing )
   {
-    if ( e1stops || e2stops || abs(e1->windCnt) > 1 ||
-      abs(e2->windCnt) > 1 ||
+    if ( e1stops || e2stops || fabs(e1->windCnt) > 1 ||
+      fabs(e2->windCnt) > 1 ||
       (e1->polyType != e2->polyType && m_ClipType != ctXor) )
         AddLocalMaxPoly(e1, e2, pt); else
         DoBothEdges( e1, e2, pt );
@@ -1823,10 +1823,10 @@ void Clipper::IntersectEdges(TEdge *e1, TEdge *e2,
     switch( m_ClipType ) {
       case ctIntersection:
         if ( (e2->polyType == ptSubject || e2->windCnt2 != 0) &&
-           abs(e2->windCnt) < 2 ) DoEdge1( e1, e2, pt);
+           fabs(e2->windCnt) < 2 ) DoEdge1( e1, e2, pt);
         break;
       default:
-        if ( abs(e2->windCnt) < 2 ) DoEdge1(e1, e2, pt);
+        if ( fabs(e2->windCnt) < 2 ) DoEdge1(e1, e2, pt);
     }
   }
   else if ( e2contributing )
@@ -1834,22 +1834,22 @@ void Clipper::IntersectEdges(TEdge *e1, TEdge *e2,
     switch( m_ClipType ) {
       case ctIntersection:
         if ( (e1->polyType == ptSubject || e1->windCnt2 != 0) &&
-          abs(e1->windCnt) < 2 ) DoEdge2( e1, e2, pt );
+          fabs(e1->windCnt) < 2 ) DoEdge2( e1, e2, pt );
         break;
       default:
-        if (abs(e1->windCnt) < 2) DoEdge2( e1, e2, pt );
+        if (fabs(e1->windCnt) < 2) DoEdge2( e1, e2, pt );
     }
   } else
   {
     //neither edge is currently contributing ...
-    if ( abs(e1->windCnt) > 1 && abs(e2->windCnt) > 1 ) ;// do nothing
+    if ( fabs(e1->windCnt) > 1 && fabs(e2->windCnt) > 1 ) ;// do nothing
     else if ( e1->polyType != e2->polyType && !e1stops && !e2stops &&
-      abs(e1->windCnt) < 2 && abs(e2->windCnt) < 2 )
+      fabs(e1->windCnt) < 2 && fabs(e2->windCnt) < 2 )
         AddLocalMinPoly(e1, e2, pt);
-    else if ( abs(e1->windCnt) == 1 && abs(e2->windCnt) == 1 )
+    else if ( fabs(e1->windCnt) == 1 && fabs(e2->windCnt) == 1 )
       switch( m_ClipType ) {
         case ctIntersection:
-          if ( abs(e1->windCnt2) > 0 && abs(e2->windCnt2) > 0 )
+          if ( fabs(e1->windCnt2) > 0 && fabs(e2->windCnt2) > 0 )
             AddLocalMinPoly(e1, e2, pt);
           break;
         case ctUnion:
@@ -1866,7 +1866,7 @@ void Clipper::IntersectEdges(TEdge *e1, TEdge *e2,
         case ctXor:
           AddLocalMinPoly(e1, e2, pt);
       }
-    else if ( abs(e1->windCnt) < 2 && abs(e2->windCnt) < 2 )
+    else if ( fabs(e1->windCnt) < 2 && fabs(e2->windCnt) < 2 )
       SwapSides( *e1, *e2 );
   }
 
@@ -1952,16 +1952,16 @@ bool Clipper::IsContributing(TEdge *edge)
   switch( m_ClipType ){
     case ctIntersection:
       if ( edge->polyType == ptSubject )
-        return abs(edge->windCnt) == 1 && edge->windCnt2 != 0; else
-        return abs(edge->windCnt2) > 0 && abs(edge->windCnt) == 1;
+        return fabs(edge->windCnt) == 1 && edge->windCnt2 != 0; else
+        return fabs(edge->windCnt2) > 0 && fabs(edge->windCnt) == 1;
     case ctUnion:
-      return abs(edge->windCnt) == 1 && edge->windCnt2 == 0;
+      return fabs(edge->windCnt) == 1 && edge->windCnt2 == 0;
     case ctDifference:
       if ( edge->polyType == ptSubject )
-        return abs(edge->windCnt) == 1 && edge->windCnt2 == 0; else
-        return abs(edge->windCnt) == 1 && edge->windCnt2 != 0;
+        return fabs(edge->windCnt) == 1 && edge->windCnt2 == 0; else
+        return fabs(edge->windCnt) == 1 && edge->windCnt2 != 0;
     default: //case ctXor:
-      return abs(edge->windCnt) == 1;
+      return fabs(edge->windCnt) == 1;
   }
 }
 //------------------------------------------------------------------------------
