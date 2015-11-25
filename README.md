@@ -4,7 +4,7 @@ These are Ruby bindings to Clipper, Angus Johnson's Polygon clipping
 library. Because Clipper is not readily packaged, and is so beautifully
 self-contained, I've included the two required files in the package.
 
-This release contains version 2.9 of Clipper.
+This release contains version 6.2.1 of Clipper.
 
 * [Clipper Homepage](http://angusj.com/delphi/clipper.php)
 * [rbclipper](http://github.com/mieko/rbclipper)
@@ -15,7 +15,7 @@ To install:
 
 Build locally:
 
-    rake install 
+    rake install
 
 
 Simple Usage:
@@ -48,18 +48,18 @@ bindings can be accessed by:
 
 Polygons
 --------
-Operations that accept or return polygons are specified as an array of `[x,y]` 
+Operations that accept or return polygons are specified as an array of `[x,y]`
 coordinates, for example, to specify a triangle:
 
     triangle = [[0,0], [0,100], [50, -100]]
 
-Clipper supports both holes and complex polygons.  Coordinates for output 
+Clipper supports both holes and complex polygons.  Coordinates for output
 polygons are clockwise for shells, and and counter-clockwise for holes.
 See force_orientation.
 
-Note that since 2.8, Clipper defines orientation with respect to a 
-_downward-increasing Y axis_, similar to how many 2D GUI/drawing APIs position 
-coordinate (0,0) at the top-left corner.  The bindings have followed Clipper 
+Note that since 2.8, Clipper defines orientation with respect to a
+_downward-increasing Y axis_, similar to how many 2D GUI/drawing APIs position
+coordinate (0,0) at the top-left corner.  The bindings have followed Clipper
 proper in this regard.
 
 Multiple polygons are represented as simply an array of polygons.
@@ -68,12 +68,12 @@ Fill Types
 -----------
   * `:even_odd`
 
-    A point is considered inside the polygon if the number of edge-crossings to 
+    A point is considered inside the polygon if the number of edge-crossings to
     get there from outside the shape is an even number.
 
   * `:non_zero`
 
-    A point is considered inside the polygon if the number of edge-crossings to 
+    A point is considered inside the polygon if the number of edge-crossings to
     get there is greater than zero.
 
 Clipper::Clipper Methods
@@ -87,8 +87,8 @@ Clipper::Clipper Methods
 
   `Clipper#add_clip_polygon(polygon)`
 
-  Adds a subject or clip polygon to the engine.  Boolean operations are 
-  calculated as `SUBJECT` *operatation* `CLIP`.  Multiple polygons can Pay attention 
+  Adds a subject or clip polygon to the engine.  Boolean operations are
+  calculated as `SUBJECT` *operatation* `CLIP`.  Multiple polygons can Pay attention
   to the orientation of the coordinates given; counter-clockwise for shells and
   clockwise for holes.
 
@@ -118,5 +118,5 @@ Clipper::Clipper Methods
 
   `Clipper#xor(subject_fill=:even_odd, clip_fill=:even_odd)`
 
-   Performs a boolean operation on the polygons that have been added to the 
+   Performs a boolean operation on the polygons that have been added to the
    clipper object.  The result is a list of polygons.
